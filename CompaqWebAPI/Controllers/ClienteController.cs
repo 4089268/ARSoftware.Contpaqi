@@ -186,6 +186,149 @@ namespace WebAPI.Controllers
             });
         }
 
+        [HttpPatch("{codigoCliente}")]
+        public IActionResult ActualizarCliente( [FromRoute] int empresaId, [FromRoute] string codigoCliente, [FromBody] ActualizarClienteRequest request)
+        {
+            try
+            {
+                AbrirEmpresa(empresaId);
+            }
+            catch (KeyNotFoundException)
+            {
+                return BadRequest(new { Title = "Empresa no disponible" });
+            }
+
+            
+            // * obtener cliente
+            ClienteSdk? cliente = null;
+            string errorMessage = string.Empty;
+            try
+            {
+                Console.WriteLine($"Obteniendo datos del cliente: {codigoCliente}");
+                cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                errorMessage = ex.Message;
+            }
+
+            if(cliente == null)
+            {
+                ConexionSDK.CerrarEmpresa();
+                ConexionSDK.TerminarSdk();
+
+                return NotFound(new
+                {
+                    Title = "El cliente no se encuentra registrado en el sistema."
+                });
+            }
+
+
+            // * actualizar datos cliente
+            // TODO: Aply some validations like RFC match the same structure, etc.
+            try
+            {
+                if(!string.IsNullOrEmpty(request.RFC))
+                {
+                    cliente.Rfc = request.RFC.Trim();
+                }
+                if (!string.IsNullOrEmpty(request.RazonSocial))
+                {
+                    cliente.RazonSocial = request.RazonSocial.Trim();
+                }
+                if (request.Tipo != 0)
+                {
+                    cliente.Tipo = request.Tipo;
+                }
+                ClienteSdk.ActualizarCliente(cliente);
+            }
+            catch(Exception ex)
+            {
+                this.logger.LogError(ex, "Error al actualizar los datos del cliente: {message}", ex.Message);
+                errorMessage = ex.Message;
+            }
+            finally
+            {
+                ConexionSDK.CerrarEmpresa();
+                ConexionSDK.TerminarSdk();
+            }
+
+            if(!string.IsNullOrEmpty(errorMessage))
+            {
+                return Conflict(new
+                {
+                    Title = "Error al actualizar el cliente",
+                    Message = errorMessage
+                });
+            }
+
+            return Ok(new
+            {
+                Title = "Cliente actualizado"
+            });
+        }
+
+        [HttpDelete("{codigoCliente}")]
+        public IActionResult EliminarCliente([FromRoute] int empresaId, [FromRoute] string codigoCliente)
+        {
+            try
+            {
+                AbrirEmpresa(empresaId);
+            }
+            catch (KeyNotFoundException)
+            {
+                return BadRequest(new { Title = "Empresa no disponible" });
+            }
+
+
+            // * obtener cliente
+            ClienteSdk? cliente = null;
+            string errorMessage = string.Empty;
+            try
+            {
+                Console.WriteLine($"Obteniendo datos del cliente: {codigoCliente}");
+                cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                errorMessage = ex.Message;
+            }
+
+            if (cliente == null)
+            {
+                ConexionSDK.CerrarEmpresa();
+                ConexionSDK.TerminarSdk();
+                return NotFound(new
+                {
+                    Title = "El cliente no se encuentra registrado en el sistema."
+                });
+            }
+
+            // * eliminando cliente
+            try
+            {
+                ClienteSdk.EliminarCliente(cliente);
+            }
+            catch(Exception ex)
+            {
+                this.logger.LogError(ex, "Error al tratar de eliminar el cliente:{message}", ex.Message);
+            }
+            finally
+            {
+                ConexionSDK.CerrarEmpresa();
+                ConexionSDK.TerminarSdk();
+            }
+             
+
+            return Ok(new
+            {
+                Title = "Eliminar cliente"
+            });
+        }
+
+
         #region Private methods
         /// <summary>
         /// Trata de abrir la empresa seleccionada
