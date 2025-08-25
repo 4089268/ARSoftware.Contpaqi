@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CompaqWebAPI.DTO;
+using System;
 using WebAPI.Core;
 using WebAPI.DTO;
 
@@ -17,6 +18,17 @@ namespace WebAPI.Adapters
                 TipoDesc = string.Empty
             };
             return productoResponse;
+        }
+
+        public static ProductoSdk ToEntity(this NuevoProductoRequest request)
+        {
+            var producto = new ProductoSdk
+            {
+                Codigo = request.Codigo ?? string.Empty,
+                Nombre = request.Nombre ?? string.Empty,
+                Tipo = request.Tipo!.Value
+            };
+            return producto;
         }
     }
 }

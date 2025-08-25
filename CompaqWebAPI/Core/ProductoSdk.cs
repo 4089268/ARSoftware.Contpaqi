@@ -46,6 +46,8 @@ namespace WebAPI.Core
             // Actualizar los campos del registro donde el SDK esta posicionado
             ComercialSdk.fSetDatoProducto("CNOMBREPRODUCTO", producto.Nombre).TirarSiEsError();
 
+            ComercialSdk.fSetDatoProducto("CTIPOPRODUCTO", producto.Tipo.ToString()).TirarSiEsError();
+
             // Guardar los cambios realizados al registro
             ComercialSdk.fGuardaProducto().TirarSiEsError();
         }
