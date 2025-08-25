@@ -104,6 +104,9 @@ namespace WebAPI.Controllers
         [HttpPost]
         public IActionResult AlmacenarConcepto([FromRoute] int empresaId, [FromBody] NuevoConceptoRequest request)
         {
+            // * no existe funciona para generar nuevos concpetos en SDK
+            return StatusCode(StatusCodes.Status501NotImplemented, "Este endpoint no esta disponible");
+
             // * validate the request
             if (!ModelState.IsValid)
             {
@@ -244,6 +247,13 @@ namespace WebAPI.Controllers
             });
         }
 
+        [HttpGet("catalogo/plantillas-digitales")]
+        public IActionResult ObtenerCatalogoPlantillasDigitales([FromRoute] int empresaId)
+        {
+            // * no existe funcion para obtener el listado de las plantillas desde el .dll
+            // TODO: Generar un catalogo estatico de plantillas?
+            return StatusCode(StatusCodes.Status501NotImplemented, "Este endpoint no esta disponible");
+        }
 
 
         #region Private methods
