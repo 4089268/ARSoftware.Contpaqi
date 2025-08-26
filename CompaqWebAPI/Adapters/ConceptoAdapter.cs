@@ -1,13 +1,13 @@
 ﻿using CompaqWebAPI.DTO;
-using WebAPI.Core;
+using CompaqWebAPI.Models;
 
 namespace CompaqWebAPI.Adapters
 {
     public static class ConceptoAdapter
     {
-        public static ConceptoSdk ToEntity(this NuevoConceptoRequest request)
+        public static Concepto ToEntity(this NuevoConceptoRequest request)
         {
-            var conceptoSdk = new ConceptoSdk
+            var conceptoSdk = new Concepto
             {
                 Codigo = request.Codigo!,
                 Nombre = request.Nombre!,

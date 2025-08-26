@@ -1,9 +1,10 @@
-﻿using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
-using CompaqWebAPI.Helpers;
+﻿using System;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using WebAPI.Core;
+using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
+using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Helpers;
+using CompaqWebAPI.Models;
 using WebAPI.DTO;
 
 namespace WebAPI.Controllers
@@ -11,13 +12,18 @@ namespace WebAPI.Controllers
     [Route("api/{empresaId}/facturas")]
     [ApiController]
     [ServiceFilter(typeof(InitSDKActionFilter))]
-    public class FacturaController(ILogger<FacturaController> logger) : ControllerBase
+    public class FacturaController(ILogger<FacturaController> logger, IConceptoService cService, IMovimientoService mService, IProductoService pService, IDocumentoService dService, IClienteService ccService) : ControllerBase
     {
         private readonly ILogger<FacturaController> logger = logger;
+        private readonly IConceptoService conceptoService = cService;
+        private readonly IMovimientoService movimientoService = mService;
+        private readonly IProductoService productoService = pService;
+        private readonly IDocumentoService documentoService = dService;
+        private readonly IClienteService clienteService = ccService;
 
 
         [HttpPost]
-        public ActionResult<DocumentoSdk> GenerarFactura([FromRoute] int empresaId, [FromBody] NuevaFacturaRequest nuevaFacturaRequest)
+        public ActionResult<Documento> GenerarFactura([FromRoute] int empresaId, [FromBody] NuevaFacturaRequest nuevaFacturaRequest)
         {
             // * validate the request
             if(!ModelState.IsValid)
@@ -31,15 +37,15 @@ namespace WebAPI.Controllers
             int documentoId = 0;
             try
             {
-                ConceptoSdk concepto = ConceptoSdk.BuscarConceptoPorCodigo(nuevaFacturaRequest.CodigoConcepto!);
+                Concepto concepto = this.conceptoService.BuscarConceptoPorCodigo(nuevaFacturaRequest.CodigoConcepto!);
                 this.logger.LogDebug("Concepto seleccionado: {cliente}", concepto.Nombre);
 
-                ClienteSdk cliente = ClienteSdk.BuscarClientePorCodigo(nuevaFacturaRequest.CodigoCliente!);
+                Cliente cliente = this.clienteService.BuscarClientePorCodigo(nuevaFacturaRequest.CodigoCliente!);
                 this.logger.LogDebug("Cliente seleccionado: {cliente}", cliente.RazonSocial);
 
-                tLlaveDoc siguienteFolio = DocumentoSdk.BuscarSiguienteSerieYFolio(concepto.Codigo);
+                tLlaveDoc siguienteFolio = this.documentoService.BuscarSiguienteSerieYFolio(concepto.Codigo);
 
-                var nuevoDocumento = new DocumentoSdk
+                var nuevoDocumento = new Documento
                 {
                     ConceptoId = concepto.Id,
                     Fecha = DateTime.Today,
@@ -49,7 +55,7 @@ namespace WebAPI.Controllers
                     Referencia = nuevaFacturaRequest.Referencia ?? string.Empty,
                     Observaciones = nuevaFacturaRequest.Observaciones ?? string.Empty,
                 };
-                documentoId = DocumentoSdk.CrearDocumento(nuevoDocumento);
+                documentoId = this.documentoService.CrearDocumento(nuevoDocumento);
 
                 // * agregar movimientos (conceptos) a la factura
                 foreach(var movimiento in nuevaFacturaRequest.Movimientos!)
@@ -74,10 +80,10 @@ namespace WebAPI.Controllers
 
 
             // * obtener datos de la factura
-            DocumentoSdk? documentoResp = null;
+            Documento? documentoResp = null;
             try
             {
-                documentoResp = DocumentoSdk.BuscarDocumentoPorId(documentoId);
+                documentoResp = this.documentoService.BuscarDocumentoPorId(documentoId);
                 return Ok( new
                 {
                     Titlte = "Factura generada con exito.",
@@ -106,9 +112,9 @@ namespace WebAPI.Controllers
         private int CrearMovimientoFactura(int documentoId, MovimientoRequest request, string? referencia, string? observaciones)
         {
             this.logger.LogDebug("Generando movimiento de documento {documentoId}", documentoId);
-            ProductoSdk producto = ProductoSdk.BuscarProductoPorCodigo(request.CodigoProducto!);
+            Producto producto = this.productoService.BuscarProductoPorCodigo(request.CodigoProducto!);
             this.logger.LogInformation("  Producto seleccionado: {producto}", producto.Nombre);
-            var movimiento = new MovimientoSdk
+            var movimiento = new Movimiento
             {
                 DocumentoId = documentoId,
                 ProductoId = producto.Id,
@@ -117,7 +123,7 @@ namespace WebAPI.Controllers
                 Referencia = referencia ?? string.Empty,
                 Observaciones = observaciones ?? string.Empty
             };
-            var idMovimiento = MovimientoSdk.CrearMovimiento(movimiento);
+            var idMovimiento = this.movimientoService.CrearMovimiento(movimiento);
             return idMovimiento;
         }
         #endregion

@@ -2,9 +2,9 @@
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
 using System.Text;
 
-namespace CompaqWebAPI.Core
+namespace CompaqWebAPI.Models
 {
-    public sealed class EmpresaSdk
+    public sealed class Empresa
     {
         /// <summary>
         ///     Campo CIDEMPRESA - Identificador de la empresa.
@@ -14,11 +14,11 @@ namespace CompaqWebAPI.Core
         /// <summary>
         ///     Campo CNOMBREEMPRESA - Nombre de la empresa.
         /// </summary>
-        public string Nombre { get; set; }
+        public string Nombre { get; set; } = string.Empty;
 
         /// <summary>
         ///     Campo CRUTADATOS - Ruta de la empresa.
         /// </summary>
-        public string Ruta { get; set; }
+        public string Ruta { get; set; } = string.Empty;
     }
 }

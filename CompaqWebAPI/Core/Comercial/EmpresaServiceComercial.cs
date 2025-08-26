@@ -1,15 +1,16 @@
 ﻿using ARSoftware.Contpaqi.Comercial.Sdk;
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
 using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Models;
 using System.Text;
 
 namespace CompaqWebAPI.Core.Comercial
 {
     public class EmpresaServiceComercial : IEmpresaService
     {
-        public List<EmpresaSdk> BuscarEmpresas()
+        public List<Empresa> BuscarEmpresas()
         {
-            var empresasList = new List<EmpresaSdk>();
+            var empresasList = new List<Empresa>();
 
             // Declarar variables a leer de la base de datos
             var idBd = 0;
@@ -24,7 +25,7 @@ namespace CompaqWebAPI.Core.Comercial
             }
 
             // Instanciar una empresa y asignar los datos de la base de datos
-            empresasList.Add(new EmpresaSdk
+            empresasList.Add(new Empresa
             {
                 Id = idBd,
                 Nombre = nombreBd.ToString(),
@@ -36,7 +37,7 @@ namespace CompaqWebAPI.Core.Comercial
             while (ComercialSdk.fPosSiguienteEmpresa(ref idBd, nombreBd, rutaBd) == SdkConstantes.CodigoExito)
             {
                 // Instanciar una empresa y asignar los datos de la base de datos       
-                empresasList.Add(new EmpresaSdk
+                empresasList.Add(new Empresa
                 {
                     Id = idBd,
                     Nombre = nombreBd.ToString(),

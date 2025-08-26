@@ -2,64 +2,25 @@
 using System.Text;
 using ARSoftware.Contpaqi.Comercial.Sdk;
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
-using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
 using ARSoftware.Contpaqi.Comercial.Sdk.Extensiones;
-using ARSoftware.Contpaqi.Comercial.Sdk.Excepciones;
+using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
+using CompaqWebAPI.Models;
+using CompaqWebAPI.Core.Interfaces;
 
-namespace WebAPI.Core
+
+namespace CompaqWebAPI.Core.Comercial
 {
-    public class DocumentoSdk
+    public class DocumentoServiceComercial(IClienteService cService, IConceptoService ccService) : IDocumentoService
     {
-        /// <summary>
-        ///     Campo CIDCLIENTEPROVEEDOR - Identificador del cliente o proveedor del documento.
-        /// </summary>
-        public int ClienteId { get; set; }
 
-        /// <summary>
-        ///     Campo CIDCONCEPTODOCUMENTO - Identificador del concepto del documento.
-        /// </summary>
-        public int ConceptoId { get; set; }
-
-        /// <summary>
-        ///     Campo CFECHA - Fecha del documento.
-        /// </summary>
-        public DateTime Fecha { get; set; }
-
-        /// <summary>
-        ///     Campo CFOLIO - Folio del documento.
-        /// </summary>
-        public double Folio { get; set; }
-
-        /// <summary>
-        ///     Campo CIDDOCUMENTO - Identificador del documento.
-        /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
-        ///     Campo COBSERVACIONES - Observaciones del documento.
-        /// </summary>
-        public string Observaciones { get; set; }
-
-        /// <summary>
-        ///     Campo CREFERENCIA - Referencia del documento.
-        /// </summary>
-        public string Referencia { get; set; }
-
-        /// <summary>
-        ///     Campo CSERIEDOCUMENTO - Serie del documento.
-        /// </summary>
-        public string Serie { get; set; }
-
-        /// <summary>
-        ///     Campo CTOTAL - Importe del total de los totales de los movimientos para el documento.
-        /// </summary>
-        public double Total { get; set; }
+        private readonly IClienteService clienteService = cService;
+        private readonly IConceptoService conceptoService = ccService;
 
         /// <summary>
         ///     Actualiza los datos de un documento.
         /// </summary>
         /// <param name="documento">Documento con los datos a actualizar.</param>
-        public static void ActualizarDocumento(DocumentoSdk documento)
+        public void ActualizarDocumento(Documento documento)
         {
             // Buscar el documento
             // Si el documento existe el SDK se posiciona en el registro
@@ -133,7 +94,7 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="documentoId">El id del documento a buscar.</param>
         /// <returns>El documento a buscar.</returns>
-        public static DocumentoSdk BuscarDocumentoPorId(int documentoId)
+        public Documento BuscarDocumentoPorId(int documentoId)
         {
             // Buscar el documento por id
             // Si el documento existe el SDK se posiciona en el registro
@@ -150,7 +111,7 @@ namespace WebAPI.Core
         /// <param name="serie">La serie del documento a buscar.</param>
         /// <param name="folio">El folio del documento a buscar.</param>
         /// <returns>El documento a buscar.</returns>
-        public static DocumentoSdk BuscarDocumentoPorLlave(string codigoConcepto, string serie, string folio)
+        public Documento BuscarDocumentoPorLlave(string codigoConcepto, string serie, string folio)
         {
             // Buscar el documento por llave
             // Si el documento existe el SDK se posiciona en el registro
@@ -168,10 +129,10 @@ namespace WebAPI.Core
         /// <param name="codigoConcepto">Código del concepto de documento.</param>
         /// <param name="codigoClienteProveedor">Código del cliente.</param>
         /// <returns>Lista de documentos con sus datos asignados.</returns>
-        public static List<DocumentoSdk> BuscarDocumentosPorFiltro(DateTime fechaInicio, DateTime fechaFin, string codigoConcepto,
+        public List<Documento> BuscarDocumentosPorFiltro(DateTime fechaInicio, DateTime fechaFin, string codigoConcepto,
             string codigoClienteProveedor)
         {
-            var documentosList = new List<DocumentoSdk>();
+            var documentosList = new List<Documento>();
 
             // Cancelar filtro
             ComercialSdk.fCancelaFiltroDocumento().TirarSiEsError();
@@ -209,7 +170,7 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="codigoConcepto">El código del concepto de documento.</param>
         /// <returns>La llave con el siguiente serie y folio.</returns>
-        public static tLlaveDoc BuscarSiguienteSerieYFolio(string codigoConcepto)
+        public tLlaveDoc BuscarSiguienteSerieYFolio(string codigoConcepto)
         {
             // Declarar variables a asignar por el SDK
             double folioBd = 0;
@@ -229,7 +190,7 @@ namespace WebAPI.Core
         /// <param name="contrasenaCertificado">La contraseña del certificado.</param>
         /// <param name="motivoCancelacion">El código de motivo de cancelación.</param>
         /// <param name="uuidRemplazo">El UUID de reemplazo si se requiere.</param>
-        public static void CancelarDocumento(int idDocumento, string contrasenaCertificado, string motivoCancelacion, string uuidRemplazo)
+        public void CancelarDocumento(int idDocumento, string contrasenaCertificado, string motivoCancelacion, string uuidRemplazo)
         {
             // Buscar el documento
             ComercialSdk.fBuscarIdDocumento(idDocumento).TirarSiEsError();
@@ -246,10 +207,10 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="documento">El documento a crear.</param>
         /// <returns>El id del documento creado.</returns>
-        public static int CrearDocumento(DocumentoSdk documento)
+        public int CrearDocumento(Documento documento)
         {
-            ConceptoSdk concepto = ConceptoSdk.BuscarConceptoPorId(documento.ConceptoId);
-            ClienteSdk cliente = ClienteSdk.BuscarClientePorId(documento.ClienteId);
+            Concepto concepto = this.conceptoService.BuscarConceptoPorId(documento.ConceptoId);
+            Cliente cliente = this.clienteService.BuscarClientePorId(documento.ClienteId);
 
             // Instanciar un documento con la estructura tDocumento del SDK
             var nuevoDocumento = new tDocumento
@@ -283,10 +244,10 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="documento">El documento a crear.</param>
         /// <returns>El id del documento creado.</returns>
-        public static int CrearDocumentoCargoAbono(DocumentoSdk documento)
+        public int CrearDocumentoCargoAbono(Documento documento)
         {
-            ConceptoSdk concepto = ConceptoSdk.BuscarConceptoPorId(documento.ConceptoId);
-            ClienteSdk cliente = ClienteSdk.BuscarClientePorId(documento.ClienteId);
+            Concepto concepto = this.conceptoService.BuscarConceptoPorId(documento.ConceptoId);
+            Cliente cliente = this.clienteService.BuscarClientePorId(documento.ClienteId);
 
             // Instanciar un documento con la estructura tDocumento del SDK
             var nuevoDocumento = new tDocumento
@@ -322,7 +283,7 @@ namespace WebAPI.Core
         ///     Elimina un documento.
         /// </summary>
         /// <param name="documento">El documento a eliminar.</param>
-        public static void EliminarDocumento(DocumentoSdk documento)
+        public void EliminarDocumento(Documento documento)
         {
             // Buscar el documento
             // Si el documento existe el SDK se posiciona en el registro
@@ -340,7 +301,7 @@ namespace WebAPI.Core
         /// <param name="folioDocumento">El folio del documento a generar.</param>
         /// <param name="tipoArchivo">El tipo de archivo. 0 = XML, 1 = PDF</param>
         /// <param name="rutaPlantilla">Ruta de la plantilla cuando se genera el PDF.</param>
-        public static void GenerarDocumentoDigital(string codigoConceptoDocumento, string serieDocumento, double folioDocumento,
+        public void GenerarDocumentoDigital(string codigoConceptoDocumento, string serieDocumento, double folioDocumento,
             int tipoArchivo, string rutaPlantilla)
         {
             // Generar el documento digital del CFDI
@@ -352,7 +313,7 @@ namespace WebAPI.Core
         ///     Lee los datos del documento donde el SDK esta posicionado.
         /// </summary>
         /// <returns>Un documento con los sus datos asignados.</returns>
-        private static DocumentoSdk LeerDatosDocumento()
+        private Documento LeerDatosDocumento()
         {
             // Declarar variables a leer de la base de datos
             var idBd = new StringBuilder(3000);
@@ -377,7 +338,7 @@ namespace WebAPI.Core
             ComercialSdk.fLeeDatoDocumento("CTOTAL", totalBd, 3000).TirarSiEsError();
 
             // Instanciar un documento y asignar los datos de la base de datos
-            return new DocumentoSdk
+            return new Documento
             {
                 Id = int.Parse(idBd.ToString()),
                 ConceptoId = int.Parse(conceptoIdBd.ToString()),
@@ -398,7 +359,7 @@ namespace WebAPI.Core
         /// <param name="documentoPago">El documento de pago.</param>
         /// <param name="importe">El importe que se va a aplicar.</param>
         /// <param name="fecha">La fecha en que se va a aplicar el pago.</param>
-        public static void SaldarDocumento(tLlaveDoc documentoAPagar, tLlaveDoc documentoPago, double importe, DateTime fecha)
+        public void SaldarDocumento(tLlaveDoc documentoAPagar, tLlaveDoc documentoPago, double importe, DateTime fecha)
         {
             ComercialSdk.fSaldarDocumento(ref documentoAPagar, ref documentoPago, importe, 1, fecha.ToString(FormatosFechaSdk.Fecha))
                 .TirarSiEsError();
@@ -412,18 +373,12 @@ namespace WebAPI.Core
         /// <param name="folioDocumento">El folio del documento a timbrar.</param>
         /// <param name="contrasenaCertificado">La contraseña del certificado.</param>
         /// <param name="rutaArchivoAdicional">Un archivo adicional como un complemento.</param>
-        public static void TimbrarDocumento(string codigoConceptoDocumento, string serieDocumento, double folioDocumento,
+        public void TimbrarDocumento(string codigoConceptoDocumento, string serieDocumento, double folioDocumento,
             string contrasenaCertificado, string rutaArchivoAdicional)
         {
             // Timbrar el documento
             ComercialSdk.fEmitirDocumento(codigoConceptoDocumento, serieDocumento, folioDocumento, contrasenaCertificado, rutaArchivoAdicional)
                 .TirarSiEsError();
-        }
-
-        public override string ToString()
-        {
-            return
-                $"{Id} - {Fecha:MM/dd/yyyy} - {ConceptoSdk.BuscarConceptoPorId(ConceptoId).Nombre} - {Serie} - {Folio} - {ClienteSdk.BuscarClientePorId(ClienteId).RazonSocial} - {Total:C}";
         }
     }
 }

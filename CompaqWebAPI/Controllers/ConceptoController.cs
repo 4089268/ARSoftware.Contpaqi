@@ -1,10 +1,11 @@
 ﻿using System;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using WebAPI.Core;
 using CompaqWebAPI.Adapters;
 using CompaqWebAPI.DTO;
 using CompaqWebAPI.Helpers;
+using CompaqWebAPI.Models;
+using CompaqWebAPI.Core.Interfaces;
 
 
 namespace WebAPI.Controllers
@@ -12,17 +13,18 @@ namespace WebAPI.Controllers
     [Route("api/{empresaId}/conceptos")]
     [ApiController]
     [ServiceFilter(typeof(InitSDKActionFilter))]
-    public class ConceptoController(ILogger<ConceptoController> logger) : ControllerBase
+    public class ConceptoController(ILogger<ConceptoController> logger, IConceptoService cService) : ControllerBase
     {
         private readonly ILogger<ConceptoController> logger = logger;
+        private readonly IConceptoService conceptoService = cService;
 
         [HttpGet]
         public IActionResult Conceptos([FromRoute] int empresaId)
         {
-            IEnumerable<ConceptoSdk> conceptos = Array.Empty<ConceptoSdk>();
+            IEnumerable<Concepto> conceptos = Array.Empty<Concepto>();
             try
             {
-                conceptos = ConceptoSdk.BuscarConceptos();
+                conceptos = conceptoService.BuscarConceptos();
                 return Ok(new
                 {
                     Conceptos = conceptos
@@ -42,10 +44,10 @@ namespace WebAPI.Controllers
         [HttpGet("{codigoConcepto}")]
         public IActionResult ConsultaConceptoPorCodigo([FromRoute] int empresaId, [FromRoute] string codigoConcepto)
         {
-            ConceptoSdk? concepto = null;
+            Concepto? concepto = null;
             try
             {
-                concepto = ConceptoSdk.BuscarConceptoPorCodigo(codigoConcepto);
+                concepto = conceptoService.BuscarConceptoPorCodigo(codigoConcepto);
                 return Ok(new
                 {
                     concepto
@@ -73,10 +75,10 @@ namespace WebAPI.Controllers
         public IActionResult ActualizarConcpeto([FromRoute] int empresaId, [FromRoute] string codigoConcepto, ActualizarConceptoRequest request)
         {
             // * search for the target concept
-            ConceptoSdk? conceptoSdk = null;
+            Concepto? conceptoSdk = null;
             try
             {
-                conceptoSdk = ConceptoSdk.BuscarConceptoPorCodigo(codigoConcepto);
+                conceptoSdk = conceptoService.BuscarConceptoPorCodigo(codigoConcepto);
                 if (conceptoSdk == null)
                 {
                     return NotFound(new
@@ -103,7 +105,7 @@ namespace WebAPI.Controllers
                 conceptoSdk.RutaEntrega = request.RutaEntrega ?? conceptoSdk.RutaEntrega;
                 conceptoSdk.PrefijoConcepto = request.PrefijoConcepto ?? conceptoSdk.PrefijoConcepto;
                 conceptoSdk.PlantillaFormatoDigital = request.PlantillaFormatoDigital ?? conceptoSdk.PlantillaFormatoDigital;
-                ConceptoSdk.ActualizarConcepto(conceptoSdk);
+                conceptoService.ActualizarConcepto(conceptoSdk);
                 this.logger.LogInformation("Concepto {codigo}|{nombre} actualizado", conceptoSdk.Codigo, conceptoSdk.Nombre);
 
                 return Ok(new

@@ -1,28 +1,27 @@
-﻿using CompaqWebAPI.DTO;
-using CompaqWebAPI.Helpers;
-using Microsoft.AspNetCore.Http;
+﻿using System;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
+using CompaqWebAPI.DTO;
+using CompaqWebAPI.Helpers;
+using CompaqWebAPI.Models;
 using WebAPI.Adapters;
-using WebAPI.Core;
 using WebAPI.DTO;
+using CompaqWebAPI.Core.Interfaces;
 
 namespace WebAPI.Controllers
 {
     [Route("api/{empresaId}/productos")]
     [ApiController]
     [ServiceFilter(typeof(InitSDKActionFilter))]
-    public class ProductoController(ILogger<ProductoController> logger) : ControllerBase
+    public class ProductoController(ILogger<ProductoController> logger, IProductoService pService) : ControllerBase
     {
         private readonly ILogger<ProductoController> logger = logger;
+        private readonly IProductoService productoService = pService;
 
         // TODO: Move this to a Enum
         private readonly ICollection<IDictionary<string, object>> tiposProductos = new Dictionary<string, object>[]
         {
             new () { { "Id", 1 }, { "Nombre", "Producto" } },
-            new () { { "Id", 2 },{ "Nombre", "Paquete" } },
+            new () { { "Id", 2 }, { "Nombre", "Paquete" } },
             new () { { "Id", 3 }, { "Nombre", "Servicio" } }
         };
 
@@ -33,7 +32,7 @@ namespace WebAPI.Controllers
             List<ProductoResponse> productos = new();
             try
             {
-                var _productosSdk = ProductoSdk.BuscarProductos();
+                var _productosSdk = this.productoService.BuscarProductos();
                 foreach(var prod in _productosSdk)
                 {
                     var productoResp = prod.ToResponse();
@@ -60,11 +59,11 @@ namespace WebAPI.Controllers
         [HttpPost]
         public IActionResult CrearProducto([FromRoute] int empresaId, NuevoProductoRequest request)
         {
-            ProductoSdk productoSdk = new();
+            Producto productoSdk = new();
             try
             {
                 productoSdk = request.ToEntity();
-                ProductoSdk.CrearProducto(productoSdk);
+                this.productoService.CrearProducto(productoSdk);
                 this.logger.LogInformation("Nuevo producto creado");
                 return StatusCode(201, new
                 {
@@ -87,10 +86,10 @@ namespace WebAPI.Controllers
         public IActionResult ActualizarProducto([FromRoute] int empresaId, [FromRoute] string codigoProducto, ActualizarProductoRequest request)
         {
             // * buscar producto
-            ProductoSdk? producto = null;
+            Producto? producto = null;
             try
             {
-                producto = ProductoSdk.BuscarProductoPorCodigo(codigoProducto);
+                producto = this.productoService.BuscarProductoPorCodigo(codigoProducto);
                 if(producto == null)
                 {
                     return NotFound(new
@@ -122,7 +121,7 @@ namespace WebAPI.Controllers
                     producto.Tipo = request.Tipo.Value;
                 }
 
-                ProductoSdk.ActualizarProducto(producto);
+                this.productoService.ActualizarProducto(producto);
                 this.logger.LogInformation("Producto {codigo}|{nombre} actualizado", producto.Codigo, producto.Nombre);
 
                 return Ok(new
@@ -141,7 +140,7 @@ namespace WebAPI.Controllers
             }
         }
 
-       [HttpGet("catalogo/tipo-productos")]
+        [HttpGet("catalogo/tipo-productos")]
         public IActionResult ObtenerCatalogoTipoProducto([FromRoute] int empresaId)
         {
             return Ok(new

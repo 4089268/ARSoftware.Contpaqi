@@ -1,4 +1,6 @@
-﻿namespace CompaqWebAPI.Core.Interfaces
+﻿using CompaqWebAPI.Models;
+
+namespace CompaqWebAPI.Core.Interfaces
 {
     public interface IEmpresaService
     {
@@ -7,7 +9,7 @@
         ///     Busca la lista de empresas del sistema.
         /// </summary>
         /// <returns>Lista de empresas del sistema.</returns>
-        public List<EmpresaSdk> BuscarEmpresas();
+        public List<Empresa> BuscarEmpresas();
 
     }
 }

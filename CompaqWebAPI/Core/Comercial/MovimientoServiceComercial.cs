@@ -3,59 +3,22 @@ using System.Text;
 using ARSoftware.Contpaqi.Comercial.Sdk;
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
 using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
-using ARSoftware.Contpaqi.Comercial.Sdk.Excepciones;
 using ARSoftware.Contpaqi.Comercial.Sdk.Extensiones;
+using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Models;
 
-
-namespace WebAPI.Core
+namespace CompaqWebAPI.Core.Comercial
 {
-    public class MovimientoSdk
+    public class MovimientoServiceComercial(IProductoService pService) : IMovimientoService
     {
-        /// <summary>
-        ///     Campo CIDDOCUMENTO - Identificador del documento dueño del movimiento.
-        /// </summary>
-        public int DocumentoId { get; set; }
+        private readonly IProductoService productoService = pService;
 
-        /// <summary>
-        ///     Campo CIDMOVIMIENTO - Identificador del movimiento.
-        /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
-        ///     Campo COBSERVAMOV - Observaciones del movimiento.
-        /// </summary>
-        public string Observaciones { get; set; }
-
-        /// <summary>
-        ///     Campo CPRECIO - Precio del producto.
-        /// </summary>
-        public double Precio { get; set; }
-
-        /// <summary>
-        ///     Campo CIDPRODUCTO - Identificador del producto del movimiento
-        /// </summary>
-        public int ProductoId { get; set; }
-
-        /// <summary>
-        ///     Campo CREFERENCIA - Referencia del movimiento.
-        /// </summary>
-        public string Referencia { get; set; }
-
-        /// <summary>
-        ///     Campo CTOTAL - Importe del total del movimiento.
-        /// </summary>
-        public double Total { get; set; }
-
-        /// <summary>
-        ///     Campo CUNIDADES - Cantidad de unidad base del movimiento.
-        /// </summary>
-        public double Unidades { get; set; }
 
         /// <summary>
         ///     Actualiza los datos de un movimiento.
         /// </summary>
         /// <param name="movimiento">Movimiento con los datos a actualizar.</param>
-        public static void ActualizarMovimiento(MovimientoSdk movimiento)
+        public void ActualizarMovimiento(Movimiento movimiento)
         {
             // Buscar el movimiento
             // Si el movimiento existe el SDK se posiciona en el registro
@@ -76,7 +39,7 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="movimientoId">El id del movimiento a buscar.</param>
         /// <returns>Un movimiento con sus datos asignados.</returns>
-        public static MovimientoSdk BuscarMovimientoPorId(int movimientoId)
+        public Movimiento BuscarMovimientoPorId(int movimientoId)
         {
             // Buscar el movimiento por id
             // Si el movimientos existe el SDK se posiciona en el registro
@@ -91,9 +54,9 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="documentoId">El id del documento utilizado para filtrar.</param>
         /// <returns>Lista de movimientos del documento.</returns>
-        public static List<MovimientoSdk> BuscarMovimientosPorFiltro(int documentoId)
+        public List<Movimiento> BuscarMovimientosPorFiltro(int documentoId)
         {
-            var movimientosList = new List<MovimientoSdk>();
+            var movimientosList = new List<Movimiento>();
 
             // Cancelar filtro
             ComercialSdk.fCancelaFiltroMovimiento().TirarSiEsError();
@@ -129,9 +92,9 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="movimiento">Movimiento a crear.</param>
         /// <returns></returns>
-        public static int CrearMovimiento(MovimientoSdk movimiento)
+        public int CrearMovimiento(Movimiento movimiento)
         {
-            ProductoSdk producto = ProductoSdk.BuscarProductoPorId(movimiento.ProductoId);
+            Producto producto = productoService.BuscarProductoPorId(movimiento.ProductoId);
 
             // Instanciar un movimiento con la estructura tMovimiento del SDK
             var nuevoMovimiento = new tMovimiento
@@ -161,7 +124,7 @@ namespace WebAPI.Core
         ///     Eliminar un movimiento.
         /// </summary>
         /// <param name="movimiento">El movimiento a eliminar.</param>
-        public static void EliminarMovimiento(MovimientoSdk movimiento)
+        public void EliminarMovimiento(Movimiento movimiento)
         {
             // Buscar el movimiento
             // Si el movimiento existe el SDK se posiciona en el registro
@@ -175,7 +138,7 @@ namespace WebAPI.Core
         ///     Lee los datos del movimiento donde el SDK esta posicionado.
         /// </summary>
         /// <returns>Regresa un movimiento con los sus datos asignados.</returns>
-        private static MovimientoSdk LeerDatosMovimiento()
+        private Movimiento LeerDatosMovimiento()
         {
             // Declarar variables a leer de la base de datos
             var idBd = new StringBuilder(3000);
@@ -198,7 +161,7 @@ namespace WebAPI.Core
             ComercialSdk.fLeeDatoMovimiento("CTOTAL", totalBd, 3000).TirarSiEsError();
 
             // Instanciar un movimiento y asignar los datos de la base de datos
-            return new MovimientoSdk
+            return new Movimiento
             {
                 Id = int.Parse(idBd.ToString()),
                 DocumentoId = int.Parse(documentoIdBd.ToString()),
@@ -211,9 +174,5 @@ namespace WebAPI.Core
             };
         }
 
-        public override string ToString()
-        {
-            return $"{Id} - {ProductoSdk.BuscarProductoPorId(ProductoId).Nombre} - {Unidades} - {Precio} - {Total:C}";
-        }
     }
 }

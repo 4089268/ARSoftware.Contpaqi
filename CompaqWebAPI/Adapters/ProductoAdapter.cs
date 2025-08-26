@@ -1,13 +1,13 @@
 ﻿using CompaqWebAPI.DTO;
+using CompaqWebAPI.Models;
 using System;
-using WebAPI.Core;
 using WebAPI.DTO;
 
 namespace WebAPI.Adapters
 {
     public static class ProductoAdapter
     {
-        public static ProductoResponse ToResponse(this ProductoSdk producto)
+        public static ProductoResponse ToResponse(this Producto producto)
         {
             var productoResponse = new ProductoResponse
             {
@@ -20,9 +20,9 @@ namespace WebAPI.Adapters
             return productoResponse;
         }
 
-        public static ProductoSdk ToEntity(this NuevoProductoRequest request)
+        public static Producto ToEntity(this NuevoProductoRequest request)
         {
-            var producto = new ProductoSdk
+            var producto = new Producto
             {
                 Codigo = request.Codigo ?? string.Empty,
                 Nombre = request.Nombre ?? string.Empty,

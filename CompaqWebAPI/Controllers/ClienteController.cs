@@ -4,20 +4,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using WebAPI.Adapters;
-using WebAPI.Core;
 using WebAPI.DTO;
 using CompaqWebAPI.Core.Interfaces;
 using CompaqWebAPI.Helpers;
+using CompaqWebAPI.Models;
 
 namespace WebAPI.Controllers
 {
     [Route("api/{empresaId}/clientes")]
     [ApiController]
     [ServiceFilter(typeof(InitSDKActionFilter))]
-    public class ClienteController(ILogger<ClienteController> logger, IEmpresaService es) : ControllerBase
+    public class ClienteController(ILogger<ClienteController> logger, IClienteService cService) : ControllerBase
     {
         private readonly ILogger<ClienteController> logger = logger;
-        private readonly IEmpresaService empresaService = es;
+        private readonly IClienteService clienteService = cService;
 
         // TODO: Move this to a Enum
         private readonly ICollection<IDictionary<string, object>> tiposCliente = new Dictionary<string, object>[]
@@ -31,11 +31,11 @@ namespace WebAPI.Controllers
         [HttpGet]
         public IActionResult Clientes([FromRoute] int empresaId)
         {
-            IEnumerable<ClienteSdk> clientes = Array.Empty<ClienteSdk>();
+            IEnumerable<Cliente> clientes = Array.Empty<Cliente>();
             string? errorMessage = null;
             try
             {
-                clientes = ClienteSdk.BuscarClientes();
+                clientes = this.clienteService.BuscarClientes();
             }
             catch(Exception ex)
             {
@@ -65,7 +65,7 @@ namespace WebAPI.Controllers
             string errorMessage = string.Empty;
             try
             {
-                cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente).ToResponse();
+                cliente = this.clienteService.BuscarClientePorCodigo(codigoCliente).ToResponse();
                 cliente.TipoDesc = this.tiposCliente.FirstOrDefault(elem => elem["Id"].Equals(cliente.Tipo))?["Nombre"].ToString() ?? String.Empty;
             }
             catch(Exception ex)
@@ -111,11 +111,11 @@ namespace WebAPI.Controllers
             }
             
             // * create the new client
-            ClienteSdk cliente = request.ToEntity();
+            Cliente cliente = request.ToEntity();
             string? errorMessage = null;
             try
             {
-                cliente.Id = ClienteSdk.CrearCliente(cliente);
+                cliente.Id = this.clienteService.CrearCliente(cliente);
                 logger.LogInformation("Nuevo cliente generado {razonSocial}", cliente.RazonSocial);
             }
             catch (Exception ex)
@@ -154,11 +154,11 @@ namespace WebAPI.Controllers
         public IActionResult ActualizarCliente( [FromRoute] int empresaId, [FromRoute] string codigoCliente, [FromBody] ActualizarClienteRequest request)
         {
             // * obtener cliente
-            ClienteSdk? cliente = null;
+            Cliente? cliente = null;
             string errorMessage = string.Empty;
             try
             {
-                cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente);
+                cliente = this.clienteService.BuscarClientePorCodigo(codigoCliente);
             }
             catch (Exception ex)
             {
@@ -192,7 +192,7 @@ namespace WebAPI.Controllers
                 {
                     cliente.Tipo = request.Tipo;
                 }
-                ClienteSdk.ActualizarCliente(cliente);
+                this.clienteService.ActualizarCliente(cliente);
                 this.logger.LogInformation("Cliente {codigo}|{nombre} actualizado", cliente.Codigo, cliente.RazonSocial);
             }
             catch(Exception ex)
@@ -220,11 +220,11 @@ namespace WebAPI.Controllers
         public IActionResult EliminarCliente([FromRoute] int empresaId, [FromRoute] string codigoCliente)
         {
             // * obtener cliente
-            ClienteSdk? cliente = null;
+            Cliente? cliente = null;
             string errorMessage = string.Empty;
             try
             {
-                cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente);
+                cliente = this.clienteService.BuscarClientePorCodigo(codigoCliente);
             }
             catch (Exception ex)
             {
@@ -243,7 +243,7 @@ namespace WebAPI.Controllers
             // * eliminando cliente
             try
             {
-                ClienteSdk.EliminarCliente(cliente);
+                this.clienteService.EliminarCliente(cliente);
             }
             catch(Exception ex)
             {

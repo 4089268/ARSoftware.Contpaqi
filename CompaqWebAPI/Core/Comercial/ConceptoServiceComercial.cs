@@ -1,65 +1,33 @@
-﻿using ARSoftware.Contpaqi.Comercial.Sdk;
+﻿using System;
+using System.Text;
+using ARSoftware.Contpaqi.Comercial.Sdk;
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
+using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
 using ARSoftware.Contpaqi.Comercial.Sdk.Excepciones;
 using ARSoftware.Contpaqi.Comercial.Sdk.Extensiones;
-using System;
-using System.Text;
+using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Models;
 
-namespace WebAPI.Core
+namespace CompaqWebAPI.Core.Comercial
 {
-    public class ConceptoSdk
+    public class ConceptoServiceComercial : IConceptoService
     {
-        /// <summary>
-        ///     Campo CCODIGOCONCEPTO - Código del concepto.
-        /// </summary>
-        public string Codigo { get; set; }
 
-        /// <summary>
-        ///     Campo CIDCONCEPTODOCUMENTO - Identificador del concepto de documento.
-        /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
-        ///     Campo CNOMBRECONCEPTO - Nombre del concepto.
-        /// </summary>
-        public string Nombre { get; set; } = default!;
-
-        /// <summary>
-        ///     Serie para clasificar las facturas
-        /// </summary>
-        public string? Serie { get; set; }
-
-        /// <summary>
-        ///     Ruta donde se almacenaran las facturas (pdf, xml) generadas para este concepto.
-        /// </summary>
-        public string? RutaEntrega { get; set; }
-
-        /// <summary>
-        ///     Prefijo para el nombre del archivo de entrega.
-        /// </summary>
-        public string? PrefijoConcepto { get; set; }
-
-        /// <summary>
-        ///    Nombre de plantilla utilizada para generar los documentos digitales.
-        /// </summary>
-        public string? PlantillaFormatoDigital { get; set; }
-
-
-        public static ConceptoSdk BuscarConceptoPorCodigo(string conceptoCodigo)
+        public Concepto BuscarConceptoPorCodigo(string conceptoCodigo)
         {
             ComercialSdk.fBuscaConceptoDocto(conceptoCodigo).TirarSiEsError();
 
             return LeerDatosConcepto();
         }
 
-        public static ConceptoSdk BuscarConceptoPorId(int conceptoId)
+        public Concepto BuscarConceptoPorId(int conceptoId)
         {
             ComercialSdk.fBuscaIdConceptoDocto(conceptoId).TirarSiEsError();
 
             return LeerDatosConcepto();
         }
 
-        private static ConceptoSdk LeerDatosConcepto()
+        private Concepto LeerDatosConcepto()
         {
             var stringBuffer = new StringBuilder(3000);
 
@@ -91,7 +59,8 @@ namespace WebAPI.Core
             var plantillaDigit = stringBuffer.ToString();
             stringBuffer.Clear();
 
-            return new ConceptoSdk {
+            return new Concepto
+            {
                 Id = idConcepto,
                 Codigo = codigoConcepto,
                 Nombre = nombreConcepto,
@@ -102,9 +71,9 @@ namespace WebAPI.Core
             };
         }
 
-        public static List<ConceptoSdk> BuscarConceptos()
+        public List<Concepto> BuscarConceptos()
         {
-            var conceptosList = new List<ConceptoSdk>();
+            var conceptosList = new List<Concepto>();
 
             // Posicionar el SDK en el primer registro
             int resultado = ComercialSdk.fPosPrimerConceptoDocto();
@@ -128,7 +97,7 @@ namespace WebAPI.Core
             return conceptosList;
         }
 
-        public static void ActualizarConcepto(ConceptoSdk concepto)
+        public void ActualizarConcepto(Concepto concepto)
         {
             // Buscar el cliente por código
             // Si el cliente existe el SDK se posiciona en el registro
@@ -144,17 +113,17 @@ namespace WebAPI.Core
                 ComercialSdk.fSetDatoConceptoDocto("CSERIEPOROMISION", concepto.Serie).TirarSiEsError();
             }
 
-            if(!string.IsNullOrEmpty(concepto.RutaEntrega))
+            if (!string.IsNullOrEmpty(concepto.RutaEntrega))
             {
                 ComercialSdk.fSetDatoConceptoDocto("CRUTAENTREGA", concepto.RutaEntrega).TirarSiEsError();
             }
 
-            if(!string.IsNullOrEmpty(concepto.PrefijoConcepto))
+            if (!string.IsNullOrEmpty(concepto.PrefijoConcepto))
             {
                 ComercialSdk.fSetDatoConceptoDocto("CPREFIJOCONCEPTO", concepto.PrefijoConcepto).TirarSiEsError();
             }
 
-            if(!string.IsNullOrEmpty(concepto.PlantillaFormatoDigital))
+            if (!string.IsNullOrEmpty(concepto.PlantillaFormatoDigital))
             {
                 ComercialSdk.fSetDatoConceptoDocto("CPLAMIGCFD", concepto.PlantillaFormatoDigital).TirarSiEsError();
             }

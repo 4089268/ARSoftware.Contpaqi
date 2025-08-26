@@ -1,13 +1,13 @@
-﻿using WebAPI.Core;
+﻿using CompaqWebAPI.Models;
 using WebAPI.DTO;
 
 namespace WebAPI.Adapters
 {
     public static class ClienteAdapter
     {
-        public static ClienteSdk ToEntity(this NuevoClienteRequest request)
+        public static Cliente ToEntity(this NuevoClienteRequest request)
         {
-            var cliente = new ClienteSdk
+            var cliente = new Cliente
             {
                 Codigo = request.Codigo!,
                 RazonSocial = request.RazonSocial!,
@@ -17,7 +17,7 @@ namespace WebAPI.Adapters
             return cliente;
         }
 
-        public static ClienteResponse ToResponse(this ClienteSdk cliente)
+        public static ClienteResponse ToResponse(this Cliente cliente)
         {
             var clienteResp = new ClienteResponse
             {

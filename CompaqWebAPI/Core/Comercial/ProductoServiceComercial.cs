@@ -4,37 +4,18 @@ using ARSoftware.Contpaqi.Comercial.Sdk;
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
 using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
 using ARSoftware.Contpaqi.Comercial.Sdk.Extensiones;
-using ARSoftware.Contpaqi.Comercial.Sdk.Excepciones;
+using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Models;
 
-namespace WebAPI.Core
+namespace CompaqWebAPI.Core.Comercial
 {
-    public class ProductoSdk
+    public class ProductoServiceComercial : IProductoService
     {
-        /// <summary>
-        ///     Campo CCODIGOPRODUCTO - Código del producto.
-        /// </summary>
-        public string Codigo { get; set; }
-
-        /// <summary>
-        ///     Campo CIDPRODUCTO - Identificador del producto.
-        /// </summary>
-        public int Id { get; set; }
-
-        /// <summary>
-        ///     Campo CNOMBREPRODUCTO - Nombre del producto.
-        /// </summary>
-        public string Nombre { get; set; }
-
-        /// <summary>
-        ///     Campo CTIPOPRODUCTO - Tipo de producto: 1 = Producto, 2 = Paquete, 3 = Servicio
-        /// </summary>
-        public int Tipo { get; set; }
-
         /// <summary>
         ///     Actualiza un producto.
         /// </summary>
         /// <param name="producto">Producto del que se asignaran los datos a modificar.</param>
-        public static void ActualizarProducto(ProductoSdk producto)
+        public void ActualizarProducto(Producto producto)
         {
             // Buscar el producto por código
             // Si el producto existe el SDK se posiciona en el registro
@@ -57,7 +38,7 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="productoCodigo">El código del producto a buscar.</param>
         /// <returns>El producto a buscar.</returns>
-        public static ProductoSdk BuscarProductoPorCodigo(string productoCodigo)
+        public Producto BuscarProductoPorCodigo(string productoCodigo)
         {
             // Buscar el producto por código
             // Si el producto existe el SDK se posiciona en el registro
@@ -72,7 +53,7 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="productoId">El id del producto a buscar.</param>
         /// <returns>El producto a buscar.</returns>
-        public static ProductoSdk BuscarProductoPorId(int productoId)
+        public Producto BuscarProductoPorId(int productoId)
         {
             // Buscar el producto por id
             // Si el producto existe el SDK se posiciona en el registro
@@ -86,9 +67,9 @@ namespace WebAPI.Core
         ///     Busca todos los productos.
         /// </summary>
         /// <returns>La lista de productos.</returns>
-        public static List<ProductoSdk> BuscarProductos()
+        public List<Producto> BuscarProductos()
         {
-            var productosList = new List<ProductoSdk>();
+            var productosList = new List<Producto>();
 
             // Posicionar el SDK en el primer registro
             int resultado = ComercialSdk.fPosPrimerProducto();
@@ -117,7 +98,7 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="producto">Producto del cual se asignaran los datos.</param>
         /// <returns>El id del producto creado.</returns>
-        public static int CrearProducto(ProductoSdk producto)
+        public int CrearProducto(Producto producto)
         {
             // Instanciar un producto con la estructura tProducto del SDK
             var productoNuevo = new tProducto
@@ -142,7 +123,7 @@ namespace WebAPI.Core
         ///     Elimina un producto.
         /// </summary>
         /// <param name="producto">El producto a eliminar.</param>
-        public static void EliminarProducto(ProductoSdk producto)
+        public void EliminarProducto(Producto producto)
         {
             // Buscar el producto por codigo
             // Si el producto existe el SDK se posiciona en el registro
@@ -156,7 +137,7 @@ namespace WebAPI.Core
         ///     Lee los datos del producto donde el SDK esta posicionado.
         /// </summary>
         /// <returns>Regresa un producto con los sus datos asignados.</returns>
-        private static ProductoSdk LeerDatosProducto()
+        private Producto LeerDatosProducto()
         {
             // Declarar variables a leer de la base de datos
             var idBd = new StringBuilder(3000);
@@ -171,18 +152,13 @@ namespace WebAPI.Core
             ComercialSdk.fLeeDatoProducto("CTIPOPRODUCTO", tipoBd, 3000).TirarSiEsError();
 
             // Instanciar un producto y asignar los datos de la base de datos
-            return new ProductoSdk
+            return new Producto
             {
                 Id = int.Parse(idBd.ToString()),
                 Codigo = codigoBd.ToString(),
                 Nombre = nombreBd.ToString(),
                 Tipo = int.Parse(tipoBd.ToString())
             };
-        }
-
-        public override string ToString()
-        {
-            return $"{Id} - {Codigo} - {Nombre} - {Tipo}";
         }
     }
 }
