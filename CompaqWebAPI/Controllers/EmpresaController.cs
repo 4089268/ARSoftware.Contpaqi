@@ -1,17 +1,21 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System;
 using WebAPI.Core;
+using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Helpers;
 
 
 namespace WebAPI.Controllers
 {
+
     [Route("api/empresas")]
     [ApiController]
-    public class EmpresaController(ILogger<EmpresaController> logger) : ControllerBase
+    public class EmpresaController(ILogger<EmpresaController> logger, IEmpresaService es) : ControllerBase
     {
         private readonly ILogger<EmpresaController> logger = logger;
+        private readonly IEmpresaService empresaService = es;
 
         [HttpGet]
         public IActionResult Index()
@@ -21,7 +25,7 @@ namespace WebAPI.Controllers
             {
                 logger.LogInformation("Iniciando SDK");
                 ConexionSDK.IniciarSdk("SUPERVISOR", "");
-                companies = EmpresaSdk.BuscarEmpresas().Select(e => string.Format("{0}|{1}", e.Id, e.Nombre)).ToList();
+                companies = empresaService.BuscarEmpresas().Select(e => string.Format("{0}|{1}", e.Id, e.Nombre)).ToList();
 
             }
             catch (Exception ex)

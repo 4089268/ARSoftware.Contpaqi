@@ -3,19 +3,21 @@ using System.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Http;
-using WebAPI.Core;
 using WebAPI.Adapters;
+using WebAPI.Core;
 using WebAPI.DTO;
-
+using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Helpers;
 
 namespace WebAPI.Controllers
 {
     [Route("api/{empresaId}/clientes")]
     [ApiController]
-    public class ClienteController(ILogger<ClienteController> logger) : ControllerBase
+    [ServiceFilter(typeof(InitSDKActionFilter))]
+    public class ClienteController(ILogger<ClienteController> logger, IEmpresaService es) : ControllerBase
     {
         private readonly ILogger<ClienteController> logger = logger;
+        private readonly IEmpresaService empresaService = es;
 
         // TODO: Move this to a Enum
         private readonly ICollection<IDictionary<string, object>> tiposCliente = new Dictionary<string, object>[]
@@ -29,15 +31,6 @@ namespace WebAPI.Controllers
         [HttpGet]
         public IActionResult Clientes([FromRoute] int empresaId)
         {
-            try
-            {
-                this.AbrirEmpresa(empresaId);
-            }
-            catch(KeyNotFoundException)
-            {
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-            
             IEnumerable<ClienteSdk> clientes = Array.Empty<ClienteSdk>();
             string? errorMessage = null;
             try
@@ -48,11 +41,6 @@ namespace WebAPI.Controllers
             {
                 this.logger.LogError(ex, "Error al obtener el listado de clientes");
                 errorMessage = ex.Message;
-            }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
             }
 
             if(errorMessage != null)
@@ -73,32 +61,20 @@ namespace WebAPI.Controllers
         [HttpGet("{codigoCliente}")]
         public IActionResult ConsultaClientePorCodigo([FromRoute] int empresaId, [FromRoute] string codigoCliente)
         {
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch (KeyNotFoundException)
-            {
-                return BadRequest( new { Title = "Empresa no disponible" });
-            }
-
             ClienteResponse? cliente = null;
             string errorMessage = string.Empty;
             try
             {
-                Console.WriteLine($"Obteniendo datos del cliente: {codigoCliente}");
                 cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente).ToResponse();
                 cliente.TipoDesc = this.tiposCliente.FirstOrDefault(elem => elem["Id"].Equals(cliente.Tipo))?["Nombre"].ToString() ?? String.Empty;
             }
             catch(Exception ex)
             {
+                this.logger.LogError(ex, "");
                 Console.WriteLine(ex.Message);
                 errorMessage = ex.Message;
             }
             
-            ConexionSDK.CerrarEmpresa();
-            ConexionSDK.TerminarSdk();
-
             if(cliente != null)
             {
                 return Ok( new
@@ -120,15 +96,6 @@ namespace WebAPI.Controllers
         [HttpPost]
         public IActionResult CrearCliente([FromRoute] int empresaId, [FromBody] NuevoClienteRequest request)
         {
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch (KeyNotFoundException)
-            {
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-
             // * Validate the request
             if (!ModelState.IsValid)
             {
@@ -148,17 +115,14 @@ namespace WebAPI.Controllers
             string? errorMessage = null;
             try
             {
-                logger.LogInformation("Generando nuevo cliente: {razonSocial}", cliente.RazonSocial);
                 cliente.Id = ClienteSdk.CrearCliente(cliente);
+                logger.LogInformation("Nuevo cliente generado {razonSocial}", cliente.RazonSocial);
             }
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Error al generar el cliente nuevo");
                 errorMessage = ex.Message;
             }
-
-            ConexionSDK.CerrarEmpresa();
-            ConexionSDK.TerminarSdk();
 
             if (string.IsNullOrEmpty(errorMessage))
             {
@@ -189,35 +153,22 @@ namespace WebAPI.Controllers
         [HttpPatch("{codigoCliente}")]
         public IActionResult ActualizarCliente( [FromRoute] int empresaId, [FromRoute] string codigoCliente, [FromBody] ActualizarClienteRequest request)
         {
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch (KeyNotFoundException)
-            {
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-
-            
             // * obtener cliente
             ClienteSdk? cliente = null;
             string errorMessage = string.Empty;
             try
             {
-                Console.WriteLine($"Obteniendo datos del cliente: {codigoCliente}");
                 cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente);
             }
             catch (Exception ex)
             {
+                this.logger.LogError(ex, "Error al obtener los datos del cliente: {message}", ex.Message);
                 Console.WriteLine(ex.Message);
                 errorMessage = ex.Message;
             }
 
             if(cliente == null)
             {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-
                 return NotFound(new
                 {
                     Title = "El cliente no se encuentra registrado en el sistema."
@@ -242,16 +193,12 @@ namespace WebAPI.Controllers
                     cliente.Tipo = request.Tipo;
                 }
                 ClienteSdk.ActualizarCliente(cliente);
+                this.logger.LogInformation("Cliente {codigo}|{nombre} actualizado", cliente.Codigo, cliente.RazonSocial);
             }
             catch(Exception ex)
             {
                 this.logger.LogError(ex, "Error al actualizar los datos del cliente: {message}", ex.Message);
                 errorMessage = ex.Message;
-            }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
             }
 
             if(!string.IsNullOrEmpty(errorMessage))
@@ -272,34 +219,21 @@ namespace WebAPI.Controllers
         [HttpDelete("{codigoCliente}")]
         public IActionResult EliminarCliente([FromRoute] int empresaId, [FromRoute] string codigoCliente)
         {
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch (KeyNotFoundException)
-            {
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-
-
             // * obtener cliente
             ClienteSdk? cliente = null;
             string errorMessage = string.Empty;
             try
             {
-                Console.WriteLine($"Obteniendo datos del cliente: {codigoCliente}");
                 cliente = ClienteSdk.BuscarClientePorCodigo(codigoCliente);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                this.logger.LogError(ex, "Error al obtener el cliente: {message}", ex.Message);
                 errorMessage = ex.Message;
             }
 
             if (cliente == null)
             {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
                 return NotFound(new
                 {
                     Title = "El cliente no se encuentra registrado en el sistema."
@@ -315,12 +249,6 @@ namespace WebAPI.Controllers
             {
                 this.logger.LogError(ex, "Error al tratar de eliminar el cliente:{message}", ex.Message);
             }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-            }
-             
 
             return Ok(new
             {
@@ -328,23 +256,5 @@ namespace WebAPI.Controllers
             });
         }
 
-
-        #region Private methods
-        /// <summary>
-        /// Trata de abrir la empresa seleccionada
-        /// </summary>
-        /// <param name="empresaId"></param>
-        /// <exception cref="KeyNotFoundException">Empresa no encontrada</exception>
-        private void AbrirEmpresa(int empresaId)
-        {
-            ConexionSDK.IniciarSdk("SUPERVISOR", "");
-            var empresaSeleccionada = EmpresaSdk.BuscarEmpresas().FirstOrDefault(item => item.Id == empresaId);
-            if (empresaSeleccionada == null)
-            {
-                throw new KeyNotFoundException();
-            }
-            ConexionSDK.AbrirEmpresa(empresaSeleccionada!.Ruta);
-        }
-        #endregion
     }
 }

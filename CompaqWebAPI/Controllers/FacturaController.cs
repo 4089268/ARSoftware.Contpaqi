@@ -1,15 +1,16 @@
-﻿using System;
+﻿using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
+using CompaqWebAPI.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ARSoftware.Contpaqi.Comercial.Sdk.DatosAbstractos;
+using System;
 using WebAPI.Core;
 using WebAPI.DTO;
-using System.Reflection;
 
 namespace WebAPI.Controllers
 {
     [Route("api/{empresaId}/facturas")]
     [ApiController]
+    [ServiceFilter(typeof(InitSDKActionFilter))]
     public class FacturaController(ILogger<FacturaController> logger) : ControllerBase
     {
         private readonly ILogger<FacturaController> logger = logger;
@@ -18,15 +19,6 @@ namespace WebAPI.Controllers
         [HttpPost]
         public ActionResult<DocumentoSdk> GenerarFactura([FromRoute] int empresaId, [FromBody] NuevaFacturaRequest nuevaFacturaRequest)
         {
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch(KeyNotFoundException)
-            {
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-
             // * validate the request
             if(!ModelState.IsValid)
             {
@@ -35,17 +27,15 @@ namespace WebAPI.Controllers
 
             // TODO: Validate if the client and concept exist
 
-            string? errorMessaage = null;
-
             // * generar factura
             int documentoId = 0;
             try
             {
                 ConceptoSdk concepto = ConceptoSdk.BuscarConceptoPorCodigo(nuevaFacturaRequest.CodigoConcepto!);
-                this.logger.LogInformation("Concepto seleccionado: {cliente}", concepto.Nombre);
+                this.logger.LogDebug("Concepto seleccionado: {cliente}", concepto.Nombre);
 
                 ClienteSdk cliente = ClienteSdk.BuscarClientePorCodigo(nuevaFacturaRequest.CodigoCliente!);
-                this.logger.LogInformation("Cliente seleccionado: {cliente}", cliente.RazonSocial);
+                this.logger.LogDebug("Cliente seleccionado: {cliente}", cliente.RazonSocial);
 
                 tLlaveDoc siguienteFolio = DocumentoSdk.BuscarSiguienteSerieYFolio(concepto.Codigo);
 
@@ -75,18 +65,10 @@ namespace WebAPI.Controllers
             catch(Exception err)
             {
                 this.logger.LogError(err, "Error al generar la factura: {message}", err.Message);
-                errorMessaage = err.Message;
-            }
-
-            if (!string.IsNullOrEmpty(errorMessaage))
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-
                 return Conflict(new
                 {
                     Title = "Error al generar la factura",
-                    Message = errorMessaage
+                    err.Message
                 });
             }
 
@@ -96,93 +78,31 @@ namespace WebAPI.Controllers
             try
             {
                 documentoResp = DocumentoSdk.BuscarDocumentoPorId(documentoId);
+                return Ok( new
+                {
+                    Titlte = "Factura generada con exito.",
+                    Factura = documentoResp
+                });
             }
             catch(Exception err)
-            {
-                errorMessaage = err.Message;
-            }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-            }
-            
-            if(!string.IsNullOrEmpty(errorMessaage))
             {
                 return Conflict(new
                 {
                     Title = "Error al obtener los datos del documento",
-                    Message = errorMessaage
+                    err.Message
                 });
             }
-
-            return Ok(documentoResp!);
         }
 
 
         [HttpGet("{facturaId}/pdf")]
         public IActionResult ObtenerDocumento([FromRoute] int empresaId, [FromRoute] int facturaId)
         {
-            return Conflict(new { Title = "No implementado" });
-
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch (KeyNotFoundException)
-            {
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-
-            
-            string? errorMessaage = null;
-            int documentoId = 0;
-
-            // * obtener datos de la factura
-            DocumentoSdk? documentoResp = null;
-            try
-            {
-                documentoResp = DocumentoSdk.BuscarDocumentoPorId(documentoId);
-            }
-            catch (Exception err)
-            {
-                errorMessaage = err.Message;
-            }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-            }
-
-            if (!string.IsNullOrEmpty(errorMessaage))
-            {
-                return Conflict(new
-                {
-                    Title = "Error al obtener los datos del documento",
-                    Message = errorMessaage
-                });
-            }
-
-            return Ok(documentoResp!);
+            return StatusCode(StatusCodes.Status501NotImplemented, "Este endpoint no esta disponible");
         }
 
         #region Private methods
-        /// <summary>
-        /// Trata de abrir la empresa seleccionada
-        /// </summary>
-        /// <param name="empresaId"></param>
-        /// <exception cref="KeyNotFoundException">Empresa no encontrada</exception>
-        private void AbrirEmpresa(int empresaId)
-        {
-            ConexionSDK.IniciarSdk("SUPERVISOR", "");
-            var empresaSeleccionada = EmpresaSdk.BuscarEmpresas().FirstOrDefault(item => item.Id == empresaId);
-            if (empresaSeleccionada == null)
-            {
-                throw new KeyNotFoundException();
-            }
-            ConexionSDK.AbrirEmpresa(empresaSeleccionada!.Ruta);
-        }
-
+        
         private int CrearMovimientoFactura(int documentoId, MovimientoRequest request, string? referencia, string? observaciones)
         {
             this.logger.LogDebug("Generando movimiento de documento {documentoId}", documentoId);

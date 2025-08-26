@@ -1,3 +1,7 @@
+using CompaqWebAPI.Core;
+using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Helpers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +10,9 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<InitSDKActionFilter>();
+builder.Services.AddScoped<IEmpresaService, EmpresaServiceComercial>();
 
 var app = builder.Build();
 

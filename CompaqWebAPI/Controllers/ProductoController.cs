@@ -1,4 +1,5 @@
 ﻿using CompaqWebAPI.DTO;
+using CompaqWebAPI.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -12,6 +13,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/{empresaId}/productos")]
     [ApiController]
+    [ServiceFilter(typeof(InitSDKActionFilter))]
     public class ProductoController(ILogger<ProductoController> logger) : ControllerBase
     {
         private readonly ILogger<ProductoController> logger = logger;
@@ -28,18 +30,7 @@ namespace WebAPI.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<ProductoResponse>> ObtenerProductos([FromRoute] int empresaId)
         {
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch(KeyNotFoundException)
-            {
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-
-
             List<ProductoResponse> productos = new();
-            string? errorMessage = null;
             try
             {
                 var _productosSdk = ProductoSdk.BuscarProductos();
@@ -53,126 +44,68 @@ namespace WebAPI.Controllers
                     catch (Exception) { }
                     productos.Add(productoResp);
                 }
+                return Ok(productos);
             }
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Error al obtener el listado de productos: {message}", ex.Message);
-                errorMessage = ex.Message;
-            }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-            }
-
-            if(!string.IsNullOrEmpty(errorMessage))
-            {
                 return Conflict(new
                 {
                     Title = "Error al obtener los productos",
-                    Message = errorMessage
+                    ex.Message
                 });
             }
-            
-            return Ok(productos);
         }
 
         [HttpPost]
         public IActionResult CrearProducto([FromRoute] int empresaId, NuevoProductoRequest request)
         {
-            try
-            {
-                this.AbrirEmpresa(empresaId);
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex, "Error al inicializar la empresa");
-                return BadRequest(new { Title = "Empresa no disponible" });
-            }
-
-            string? errorMessage = null;
             ProductoSdk productoSdk = new();
             try
             {
                 productoSdk = request.ToEntity();
                 ProductoSdk.CrearProducto(productoSdk);
+                this.logger.LogInformation("Nuevo producto creado");
+                return StatusCode(201, new
+                {
+                    Title = "Producto generado",
+                    Producto = productoSdk
+                });
             }
             catch(Exception ex)
             {
                 this.logger.LogError(ex, "Error al genearr el nuevo producto: {message}", ex.Message);
-                errorMessage = ex.Message;
-            }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-            }
-
-            if(!string.IsNullOrEmpty(errorMessage))
-            {
                 return Conflict(new
                 {
                     Title = "Error al generar el nuevo producto",
-                    Message = errorMessage
+                    ex.Message
                 });
             }
-
-            return StatusCode(201, new
-            {
-                Title = "Producto generado",
-                Producto = productoSdk
-            });
-
         }
 
         [HttpPatch("{codigoProducto}")]
         public IActionResult ActualizarProducto([FromRoute] int empresaId, [FromRoute] string codigoProducto, ActualizarProductoRequest request)
         {
-            try
-            {
-                AbrirEmpresa(empresaId);
-            }
-            catch(Exception ex)
-            {
-                this.logger.LogError(ex, "Error al abrir la empresa");
-                return BadRequest(new
-                {
-                    Title = "Empresa no disponible"
-                });
-            }
-
-
             // * buscar producto
             ProductoSdk? producto = null;
-            string? errorMessage = null;
             try
             {
                 producto = ProductoSdk.BuscarProductoPorCodigo(codigoProducto);
+                if(producto == null)
+                {
+                    return NotFound(new
+                    {
+                        Title = "El producto no se encuentra registrado en el sistema"
+                    });
+                }
             }
             catch(Exception ex)
             {
                 this.logger.LogError(ex, "Error al buscar el producto: {message}", ex.Message);
-                errorMessage = ex.Message;
-            }
-
-            if(!string.IsNullOrEmpty(errorMessage))
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
                 return Conflict(new
                 {
                     Title = "Error al buscar el producto",
-                    Message = errorMessage
-                });
-            }
-
-            if(producto == null)
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-                return NotFound(new
-                {
-                    Title = "El producto no se encuentra registrado en el sistema"
+                    ex.Message
                 });
             }
 
@@ -190,30 +123,22 @@ namespace WebAPI.Controllers
                 }
 
                 ProductoSdk.ActualizarProducto(producto);
+                this.logger.LogInformation("Producto {codigo}|{nombre} actualizado", producto.Codigo, producto.Nombre);
+
+                return Ok(new
+                {
+                    Title = "Producto actualizado"
+                });
             }
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Error al actualizaz el producto: {message}", ex.Message);
-                errorMessage = ex.Message;
-            }
-            finally
-            {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
-            }
-
-            if(!string.IsNullOrEmpty(errorMessage))
-            {
                 return Conflict(new
                 {
-                    Title = "Error al actualizar el producto"
+                    Title = "Error al actualizar el producto",
+                    ex.Message
                 });
             }
-
-            return Ok( new
-            {
-                Title = "Producto actualizado"
-            });
         }
 
        [HttpGet("catalogo/tipo-productos")]
@@ -224,24 +149,5 @@ namespace WebAPI.Controllers
                 tiposProductos
             });
         }
-
-
-        #region Private methods
-        /// <summary>
-        /// Trata de abrir la empresa seleccionada
-        /// </summary>
-        /// <param name="empresaId"></param>
-        /// <exception cref="KeyNotFoundException">Empresa no encontrada</exception>
-        private void AbrirEmpresa(int empresaId)
-        {
-            ConexionSDK.IniciarSdk("SUPERVISOR", "");
-            var empresaSeleccionada = EmpresaSdk.BuscarEmpresas().FirstOrDefault(item => item.Id == empresaId);
-            if (empresaSeleccionada == null)
-            {
-                throw new KeyNotFoundException();
-            }
-            ConexionSDK.AbrirEmpresa(empresaSeleccionada!.Ruta);
-        }
-        #endregion
     }
 }
