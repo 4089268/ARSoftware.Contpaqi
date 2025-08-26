@@ -8,8 +8,12 @@ namespace CompaqWebAPI.Core
     {
         public static void AddComercialSDKServicesServiceCollection(this IServiceCollection services)
         {
-            services.AddScoped<IConexionSDK, ConexionSdkComercial>();
-            services.AddScoped<IEmpresaService, EmpresaServiceComercial>();
+            //services.AddScoped<IConexionSDK, ConexionSdkFE>();
+            //services.AddScoped<IEmpresaService, EmpresaServiceComercial>();
+
+            services.AddScoped<IConexionSDK, CompaqWebAPI.Core.FacturaElectronica.ConexionSdkFE>();
+            services.AddScoped<IEmpresaService, CompaqWebAPI.Core.FacturaElectronica.EmpresaServiceFE>();
+
             services.AddScoped<IClienteService, ClienteServiceComercial>();
             services.AddScoped<IProductoService, ProductoServiceComercial>();
             services.AddScoped<IMovimientoService, MovimientoServiceComercial>();
