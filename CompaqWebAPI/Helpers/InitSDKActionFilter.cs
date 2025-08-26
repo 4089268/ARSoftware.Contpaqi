@@ -1,19 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using WebAPI.Core;
 using CompaqWebAPI.Core.Interfaces;
+using CompaqWebAPI.Core.Comercial;
 
 namespace CompaqWebAPI.Helpers
 {
     public class InitSDKActionFilter : IActionFilter
     {
-        private readonly IEmpresaService empresaService;
         private readonly ILogger<InitSDKActionFilter> logger;
+        private readonly IConexionSDK conexionSDK;
+        private readonly IEmpresaService empresaService;
 
-        public InitSDKActionFilter(IEmpresaService empresaService, ILogger<InitSDKActionFilter> l)
+
+        public InitSDKActionFilter(ILogger<InitSDKActionFilter> l, IConexionSDK conexionSDK, IEmpresaService empresaService)
         {
-            this.empresaService = empresaService;
             this.logger = l;
+            this.conexionSDK = conexionSDK;
+            this.empresaService = empresaService;
         }
 
         public void OnActionExecuting(ActionExecutingContext context)
@@ -23,8 +26,7 @@ namespace CompaqWebAPI.Helpers
             {
                 int empresaId = Convert.ToInt32(value);
 
-                // TODO: Wrap the ConexionSDK on a service
-                ConexionSDK.IniciarSdk("SUPERVISOR", "");
+                conexionSDK.IniciarSdk("SUPERVISOR", "");
                 var empresaSeleccionada = this.empresaService.BuscarEmpresas().FirstOrDefault(item => item.Id == empresaId);
                 if(empresaSeleccionada == null)
                 {
@@ -36,7 +38,7 @@ namespace CompaqWebAPI.Helpers
 
                 try
                 {
-                    ConexionSDK.AbrirEmpresa(empresaSeleccionada!.Ruta);
+                    conexionSDK.AbrirEmpresa(empresaSeleccionada!.Ruta);
                 }
                 catch(Exception ex)
                 {
@@ -63,8 +65,8 @@ namespace CompaqWebAPI.Helpers
         {
             try
             {
-                ConexionSDK.CerrarEmpresa();
-                ConexionSDK.TerminarSdk();
+                conexionSDK.CerrarEmpresa();
+                conexionSDK.TerminarSdk();
             }
             catch(Exception ex)
             {

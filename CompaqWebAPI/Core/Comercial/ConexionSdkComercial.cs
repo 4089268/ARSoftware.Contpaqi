@@ -5,16 +5,17 @@ using ARSoftware.Contpaqi.Comercial.Sdk;
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
 using ARSoftware.Contpaqi.Comercial.Sdk.Excepciones;
 using ARSoftware.Contpaqi.Comercial.Sdk.Extensiones;
+using CompaqWebAPI.Core.Interfaces;
 
-namespace WebAPI.Core
+namespace CompaqWebAPI.Core.Comercial
 {
-    public class ConexionSDK
+    public class ConexionSdkComercial : IConexionSDK
     {
         /// <summary>
         ///     Abre la empresa de trabajo.
         /// </summary>
         /// <param name="rutaEmpresa">Ruta del directorio de la empresa.</param>
-        public static void AbrirEmpresa(string rutaEmpresa)
+        public void AbrirEmpresa(string rutaEmpresa)
         {
             ComercialSdk.fAbreEmpresa(rutaEmpresa).TirarSiEsError();
         }
@@ -24,13 +25,13 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="nombreLlaveRegistro">La llave del registro de Windows.</param>
         /// <returns>La ruta del directorio donde se encuentra el SDK.</returns>
-        private static string BuscarDirectorioDelSdk(string nombreLlaveRegistro)
+        private string BuscarDirectorioDelSdk(string nombreLlaveRegistro)
         {
             // Buscar registro de windows
             RegistryKey registryKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
 
             // Buscar la llave de CONTPAQi
-            RegistryKey keySitema = registryKey.OpenSubKey(nombreLlaveRegistro, false);
+            RegistryKey? keySitema = registryKey.OpenSubKey(nombreLlaveRegistro, false);
 
             if (keySitema == null)
             {
@@ -39,7 +40,7 @@ namespace WebAPI.Core
             // No se encontró la llave
 
             // Leer el valor del campo DIRECTORIOBASE donde se encuentra la ruta del SDK
-            object directorioBaseKey = keySitema.GetValue(LlavesRegistroWindowsSdk.NombreCampoRutaSdk);
+            var directorioBaseKey = keySitema.GetValue(LlavesRegistroWindowsSdk.NombreCampoRutaSdk);
 
             if (directorioBaseKey == null)
             {
@@ -47,13 +48,13 @@ namespace WebAPI.Core
                     string.Format("No se encontró el valor del campo {0} del registro {1}", LlavesRegistroWindowsSdk.NombreCampoRutaSdk, nombreLlaveRegistro));
             }
 
-            return directorioBaseKey.ToString();
+            return directorioBaseKey.ToString() ?? string.Empty;
         }
 
         /// <summary>
         ///     Cierra la empresa de trabajo.
         /// </summary>
-        public static void CerrarEmpresa()
+        public void CerrarEmpresa()
         {
             ComercialSdk.fCierraEmpresa();
         }
@@ -61,7 +62,7 @@ namespace WebAPI.Core
         /// <summary>
         ///     Establece el directorio de trabajo en el directorio donde se encuentra el SDK.
         /// </summary>
-        private static void EstablecerElDirectorioDeTrabajo()
+        private void EstablecerElDirectorioDeTrabajo()
         {
             // Buscar el directorio donde se encuentra el SDK
             string rutaSdk = BuscarDirectorioDelSdk(LlavesRegistroWindowsSdk.Comercial);
@@ -74,7 +75,7 @@ namespace WebAPI.Core
         ///     Inicia la conexión con el sistema y muestra una ventana de autenticación donde el usuario podrá ingresar su nombre
         ///     de usuario y contraseña.
         /// </summary>
-        public static void IniciarSdk()
+        public void IniciarSdk()
         {
             // Establecer el directorio de trabajo en el directorio donde se encuentra el SDK
             EstablecerElDirectorioDeTrabajo();
@@ -89,7 +90,7 @@ namespace WebAPI.Core
         /// </summary>
         /// <param name="nombreUsuario">Nombre de usuario del sistema de Comercial.</param>
         /// <param name="contrasena">Contraseña del sistema de Comercial.</param>
-        public static void IniciarSdk(string nombreUsuario, string contrasena)
+        public void IniciarSdk(string nombreUsuario, string contrasena)
         {
             // Establecer el directorio de trabajo en el directorio donde se encuentra el SDK
             EstablecerElDirectorioDeTrabajo();
@@ -109,7 +110,7 @@ namespace WebAPI.Core
         /// <param name="contrasenaComercial">Contraseña del sistema de Comercial.</param>
         /// <param name="nombreUsuarioContabilidad">Nombre de usuario del sistema de Contabilidad.</param>
         /// <param name="contrasenaContabilidad">Contraseña del sistema de Contabilidad.</param>
-        public static void IniciarSdk(string nombreUsuarioComercial, string contrasenaComercial, string nombreUsuarioContabilidad,
+        public void IniciarSdk(string nombreUsuarioComercial, string contrasenaComercial, string nombreUsuarioContabilidad,
             string contrasenaContabilidad)
         {
             // Iniciar conexión con el sistema
@@ -122,7 +123,7 @@ namespace WebAPI.Core
         /// <summary>
         ///     Termina la conexión con el sistema y libera recursos.
         /// </summary>
-        public static void TerminarSdk()
+        public void TerminarSdk()
         {
             ComercialSdk.fTerminaSDK();
         }

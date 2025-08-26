@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using WebAPI.Core;
 using CompaqWebAPI.Core.Interfaces;
 using CompaqWebAPI.Helpers;
+using CompaqWebAPI.Core.Comercial;
 
 
 namespace WebAPI.Controllers
@@ -12,9 +12,10 @@ namespace WebAPI.Controllers
 
     [Route("api/empresas")]
     [ApiController]
-    public class EmpresaController(ILogger<EmpresaController> logger, IEmpresaService es) : ControllerBase
+    public class EmpresaController(ILogger<EmpresaController> logger, IConexionSDK conexionSDK, IEmpresaService es) : ControllerBase
     {
         private readonly ILogger<EmpresaController> logger = logger;
+        private readonly IConexionSDK conexionSDK = conexionSDK;
         private readonly IEmpresaService empresaService = es;
 
         [HttpGet]
@@ -24,7 +25,7 @@ namespace WebAPI.Controllers
             try
             {
                 logger.LogInformation("Iniciando SDK");
-                ConexionSDK.IniciarSdk("SUPERVISOR", "");
+                this.conexionSDK.IniciarSdk("SUPERVISOR", "");
                 companies = empresaService.BuscarEmpresas().Select(e => string.Format("{0}|{1}", e.Id, e.Nombre)).ToList();
 
             }
@@ -34,7 +35,7 @@ namespace WebAPI.Controllers
             }
             finally
             {
-                ConexionSDK.TerminarSdk();
+                this.conexionSDK.TerminarSdk();
             }
 
             logger.LogInformation("Total empresas {total}", companies.Count());

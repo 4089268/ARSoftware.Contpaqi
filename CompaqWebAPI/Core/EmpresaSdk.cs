@@ -2,7 +2,7 @@
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
 using System.Text;
 
-namespace WebAPI.Core
+namespace CompaqWebAPI.Core
 {
     public sealed class EmpresaSdk
     {

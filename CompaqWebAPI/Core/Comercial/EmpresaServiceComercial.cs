@@ -2,9 +2,8 @@
 using ARSoftware.Contpaqi.Comercial.Sdk.Constantes;
 using CompaqWebAPI.Core.Interfaces;
 using System.Text;
-using WebAPI.Core;
 
-namespace CompaqWebAPI.Core
+namespace CompaqWebAPI.Core.Comercial
 {
     public class EmpresaServiceComercial : IEmpresaService
     {

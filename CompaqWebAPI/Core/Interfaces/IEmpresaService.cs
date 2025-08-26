@@ -1,6 +1,4 @@
-﻿using WebAPI.Core;
-
-namespace CompaqWebAPI.Core.Interfaces
+﻿namespace CompaqWebAPI.Core.Interfaces
 {
     public interface IEmpresaService
     {

@@ -100,7 +100,7 @@ namespace WebAPI.Controllers
             if (!ModelState.IsValid)
             {
                 var _errors = ModelState
-                    .Where( ms => ms.Value.Errors.Any())
+                    .Where( ms => ms.Value?.Errors.Any() == true)
                     .ToDictionary(ms => ms.Key, ms => ms.Value?.Errors.Select( e => string.IsNullOrEmpty(e.ErrorMessage) ? "Invalid value." : e.ErrorMessage).ToArray());
                 
                 return UnprocessableEntity(new
