@@ -25,6 +25,18 @@ namespace CompaqWebAPI.Helpers
             if (context.ActionArguments.TryGetValue("empresaId", out var value))
             {
                 int empresaId = Convert.ToInt32(value);
+                this.logger.LogInformation("Empresa seleccionada [{empresaId}]", value);
+
+                // validate the selected id
+                if (empresaId <= 1)
+                {
+                    context.Result = new ObjectResult( new { Title = "La empresa seleccionada es invalida."})
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest
+                    };
+                    return;
+                }
+
 
                 conexionSDK.IniciarSdk("SUPERVISOR", "");
                 var empresaSeleccionada = this.empresaService.BuscarEmpresas().FirstOrDefault(item => item.Id == empresaId);
@@ -42,6 +54,7 @@ namespace CompaqWebAPI.Helpers
                 }
                 catch(Exception ex)
                 {
+                    conexionSDK.TerminarSdk();
                     this.logger.LogError(ex, "Error al inicializar la empresa: {message}", ex.Message);
                     context.Result = new ObjectResult(new { Title = "Error al inicializar la empresa", ex.Message })
                     {
