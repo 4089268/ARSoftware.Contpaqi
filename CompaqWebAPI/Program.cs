@@ -11,7 +11,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<InitSDKActionFilter>();
-builder.Services.AddComercialSDKServicesServiceCollection();
+//builder.Services.AddComercialSDKServicesServiceCollection();
+builder.Services.AddFacturaElectronicaSDKServicesServiceCollection();
 
 var app = builder.Build();
 

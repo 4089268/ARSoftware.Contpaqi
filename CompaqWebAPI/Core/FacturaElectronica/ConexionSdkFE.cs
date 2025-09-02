@@ -17,7 +17,7 @@ namespace CompaqWebAPI.Core.FacturaElectronica
         /// <param name="rutaEmpresa">Ruta del directorio de la empresa.</param>
         public void AbrirEmpresa(string rutaEmpresa)
         {
-            FacturaElectronicaSdk.fAbreEmpresa(rutaEmpresa).TirarSiEsError();
+            FacturaElectronicaSdk.fAbreEmpresa(rutaEmpresa);
         }
 
         /// <summary>
